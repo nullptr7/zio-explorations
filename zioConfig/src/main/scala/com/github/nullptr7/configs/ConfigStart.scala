@@ -6,7 +6,7 @@ import ConfigDescriptor.*
 import zio.*
 
 object ConfigStart extends App:
-  final case class ApplicationConfig(
+  private final case class ApplicationConfig(
       host:     String,
       port:     Int,
       username: String,
@@ -24,11 +24,11 @@ object ConfigStart extends App:
     (string("HOSTNAME") zip int("PORT") zip string("USERNAME") zip string("PASSWORD"))
       .to[ApplicationConfig]
 
-  val reader: IO[ReadError[String], ApplicationConfig] = read(
+  private val reader: IO[ReadError[String], ApplicationConfig] = read(
     configDescriptor.from(ConfigSource.fromMap(environment))
   )
 
-  val runtime = Runtime.default
+  private val runtime = Runtime.default
 
   import Unsafe.unsafe
 
