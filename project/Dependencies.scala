@@ -32,6 +32,9 @@ object Dependencies {
 
       val `zio-config-typesafe` =
         "dev.zio" %% "zio-config-typesafe" % "3.0.2"
+
+      val `zio-prelude` =
+        "dev.zio" %% "zio-prelude" % "1.0.0-RC16"
     }
   }
 

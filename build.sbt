@@ -24,9 +24,12 @@ lazy val app =
     .in(file("."))
     .settings(name := "app")
     .settings(publish := {}, publish / skip := true)
-    .aggregate(zioServer, zioConfig)
+    .settings(commonSettings)
+    .settings(commonDependencies ++ serverDependencies ++ configDependencies)
 
-lazy val zioServer =
+    //.aggregate(zioServer, zioConfig)
+
+/*lazy val zioServer =
   project
     .settings(name := "zioServer")
     .settings(commonSettings)
@@ -38,7 +41,7 @@ lazy val zioConfig =
     .settings(name := "zioConfig")
     .settings(commonSettings)
     .settings(commonDependencies)
-    .settings(configDependencies)
+    .settings(configDependencies)*/
 
 /*
  *  Project Dependencies
@@ -54,6 +57,7 @@ lazy val configDependencies =
     dev.zio.`zio-config`,
     dev.zio.`zio-config-magnolia`,
     dev.zio.`zio-config-typesafe`,
+    dev.zio.`zio-prelude`
   )
 
 lazy val commonDependencies = Seq(
