@@ -25,56 +25,31 @@ lazy val app =
     .settings(name := "app")
     .settings(publish := {}, publish / skip := true)
     .settings(commonSettings)
-    .settings(commonDependencies ++ serverDependencies ++ configDependencies)
+    .settings(libraryDependencies ++= testDep ++ zioDep ++ loggingDep)
 
-    //.aggregate(zioServer, zioConfig)
-
-/*lazy val zioServer =
-  project
-    .settings(name := "zioServer")
-    .settings(commonSettings)
-    .settings(commonDependencies)
-    .settings(serverDependencies)
-
-lazy val zioConfig =
-  project
-    .settings(name := "zioConfig")
-    .settings(commonSettings)
-    .settings(commonDependencies)
-    .settings(configDependencies)*/
-
-/*
- *  Project Dependencies
- */
-lazy val serverDependencies =
-  libraryDependencies ++= Seq(
+lazy val zioDep =
+  Seq(
+    dev.zio.zio,
     dev.zio.`zio-json`,
-    io.d11.zhttp,
-  )
-
-lazy val configDependencies =
-  libraryDependencies ++= Seq(
     dev.zio.`zio-config`,
     dev.zio.`zio-config-magnolia`,
     dev.zio.`zio-config-typesafe`,
-    dev.zio.`zio-prelude`
+    dev.zio.`zio-prelude`,
+    dev.zio.`zio-test`,
+    io.d11.zhttp,
   )
 
-lazy val commonDependencies = Seq(
-  libraryDependencies ++= Seq(
-    // main dependencies
-    dev.zio.zio,
-    // io.getquill.`quill-zio`,
-    // io.getquill.`quill-jdbc-zio`,
-    // com.h2database.h2,
+lazy val loggingDep =
+  Seq(
     ch.`qos.logback`.`logback-classic`,
     org.slf4j.`slf4j-api`,
-  ),
-  libraryDependencies ++= Seq(
+  )
+
+lazy val testDep =
+  Seq(
     org.scalatest.scalatest,
     org.scalatestplus.`scalacheck-1-16`,
-  ).map(_ % Test),
-)
+  ).map(_ % Test)
 
 /*
  * Project Settings

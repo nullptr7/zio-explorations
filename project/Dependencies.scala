@@ -5,7 +5,7 @@ object Dependencies {
   object ch {
     object `qos.logback` {
       val `logback-classic` =
-        "ch.qos.logback" % "logback-classic" % "1.4.3"
+        "ch.qos.logback" % "logback-classic" % "1.4.4"
     }
   }
 
@@ -19,7 +19,10 @@ object Dependencies {
   object dev {
     object zio {
       val zio =
-        "dev.zio" %% "zio" % "2.0.2"
+        "dev.zio" %% "zio" % "2.0.3"
+
+      val `zio-test` =
+        "dev.zio" %% "zio-test" % "2.0.3"
 
       val `zio-json` =
         "dev.zio" %% "zio-json" % "0.3.0"
