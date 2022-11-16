@@ -91,7 +91,7 @@ object Effects extends App:
    */
 
   // 1
-  val currentTime: MyIO[Long] = MyIO[Long](() => System.currentTimeMillis())
+  private val currentTime: MyIO[Long] = MyIO[Long](() => System.currentTimeMillis())
 
   // 2
   private def measure[A](computation: MyIO[A]): MyIO[(Long, A)] =
