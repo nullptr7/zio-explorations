@@ -13,7 +13,7 @@ ThisBuild / scalacOptions ++=
     "-feature",
     "-language:implicitConversions",
     "-unchecked",
-    "-Xfatal-warnings",
+    //"-Xfatal-warnings",
     "-Yexplicit-nulls", // experimental (I've seen it cause issues with circe)
     "-Ykind-projector",
     "-Ysafe-init",      // experimental (I've seen it cause issues with circe)

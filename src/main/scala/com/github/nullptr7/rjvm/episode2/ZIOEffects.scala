@@ -122,25 +122,9 @@ object ZIOEffects extends App:
     else
       for {
         current <- ZIO.succeed(n)
-        _       <- ZIO.succeed(println(n))
+        //_       <- ZIO.succeed(println(n))
         prevSum <- sumZIO(n - 1)
       } yield current + prevSum
-
-  object ImplicitConversion:
-    given Conversion[Int, Second] = Second(_)
-
-  case class Second(value: Int)
-
-  object TimeUtil:
-    def doSomethingWithProcessingTime(sec: Second): String =
-      // impl logic
-      s"${sec.value} seconds"
-
-  object Usage:
-    import ImplicitConversion.given
-    private val processingTime = 100
-
-    TimeUtil.doSomethingWithProcessingTime(processingTime)
 
   // 7. Fibonacci
   // hint: Use ZIO.suspend
@@ -164,13 +148,13 @@ object ZIOEffects extends App:
   def doSomething(f: Int => String): String = f(42)
 
   Unsafe.unsafe { implicit u =>
-    val mol1 = runtime.unsafe.run(fiboZIO(4))
+    val mol1 = runtime.unsafe.run(sumZIO(20000))
     println(mol1)
   }
 
-  Unsafe.unsafe { i => 
-    given Unsafe = i
-    val mol1 = runtime.unsafe.run(fiboZIO(4))
-    println(mol1)
+  // Unsafe.unsafe { i => 
+  //   given Unsafe = i
+  //   val mol1 = runtime.unsafe.run(fiboZIO(4))
+  //   println(mol1)
   
-  }
+  // }
