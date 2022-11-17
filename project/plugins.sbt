@@ -1,4 +1,4 @@
-ThisBuild / scalaVersion := "2.12.16"
+ThisBuild / scalaVersion := "2.12.17"
 ThisBuild / useSuperShell := false
 ThisBuild / autoStartServer := false
 
@@ -11,4 +11,4 @@ addSbtPlugin("com.mayreh" % "sbt-thank-you-stars" % "0.2")
 addSbtPlugin("com.timushev.sbt" % "sbt-rewarn" % "0.1.3")
 addSbtPlugin("com.timushev.sbt" % "sbt-updates" % "0.6.4")
 addSbtPlugin("io.spray" % "sbt-revolver" % "0.9.1")
-addSbtPlugin("org.scalameta" % "sbt-scalafmt" % "2.4.6")
+addSbtPlugin("org.scalameta" % "sbt-scalafmt" % "2.5.0")

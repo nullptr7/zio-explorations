@@ -1,4 +1,4 @@
-import Util._
+import Utilities._
 
 Global / onChangedBuildSource := ReloadOnSourceChanges
 
