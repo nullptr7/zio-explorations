@@ -1,4 +1,4 @@
 package com.github.nullptr7
 package models
 
-case class Nin ()
+case class Nin()

@@ -122,7 +122,7 @@ object ZIOEffects extends App:
     else
       for {
         current <- ZIO.succeed(n)
-        //_       <- ZIO.succeed(println(n))
+        // _       <- ZIO.succeed(println(n))
         prevSum <- sumZIO(n - 1)
       } yield current + prevSum
 
@@ -152,9 +152,9 @@ object ZIOEffects extends App:
     println(mol1)
   }
 
-  // Unsafe.unsafe { i => 
+  // Unsafe.unsafe { i =>
   //   given Unsafe = i
   //   val mol1 = runtime.unsafe.run(fiboZIO(4))
   //   println(mol1)
-  
+
   // }

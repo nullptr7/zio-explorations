@@ -2,8 +2,9 @@ package com.github.nullptr7
 package rjvm
 package episode2
 
-import scala.util.{Failure, Success, Try}
+import scala.util.{ Failure, Success, Try }
 import zio.*
+import java.io.IOException
 
 object ZIOErrorHandling extends ZIOAppDefault:
 
@@ -112,4 +113,152 @@ object ZIOErrorHandling extends ZIOAppDefault:
         case Right(value) => ZIO.succeed(value)
     }
 
-  override def run: ZIO[Any & (ZIOAppArgs & Scope), Any, Any] = ???
+  /*
+    Errors: Failure present in ZIO type signature (like "checked exception")
+    Defects: Failure are unrecoverable, unforseen and not present in ZIO type signature.
+   */
+
+  val divisionByZero: UIO[Int] = ZIO.succeed(1 / 0)
+
+  /** ZIO[R, E, A] can finish with Exit[E, A]
+    * Success[A] containing a value
+    * Cause[E]
+    *   - Fail[E] containing the error, which ZIO cleanly caught and failed
+    *   - Die(t: Throwable) which was unforseen like divisionByZero
+    */
+
+  val aFailedInt:           IO[String, Int]        = ZIO.fail("I failed!")
+  val failureExposed:       IO[Cause[String], Int] = aFailedInt.sandbox
+  val failureExposedHidden: IO[String, Int]        = failureExposed.unsandbox
+
+  // Similarly we too have foldCause and foldZIOCause
+
+  val foldedWithCause = aFailedInt.foldCause(
+    cause => s"Failed with cause ${cause.defects}",
+    value => s"Passed with value $value",
+  )
+
+  val foldedWithCause_v2 = aFailedInt.foldCauseZIO(
+    cause => ZIO.succeed(s"Failed with cause ${cause.defects}"),
+    value => ZIO.succeed(s"Passed with value $value"),
+  )
+
+  /** Good Practice
+    *  - at a lower level, your "errors" should be treated
+    *  - at a higher level, you should "hide" errors and assume that they are unrecoverable
+    *
+    * for e.g. if any errors occurs in BusinessLogic, we should ideally handle that error effectively
+    * and when send the info back to the API/user/UI it should be not recoverable, meaning the error is a genuine error
+    * and should be handle by correct request/input etc.
+    *
+    * Like SQL exception, it is a runtime exception but this should effectively handle by our application and the response
+    * should be sent back to the user as unrecoverable and with meaningful business error message
+    */
+
+  def callHttpEndpoint(url: String): IO[IOException, String] =
+    ZIO.fail(new IOException("No internet available"))
+
+  val endpointCallWithDefects: UIO[String] =
+    callHttpEndpoint("abc.com").orDie
+
+  def callHttpEndpointWideError(url: String): IO[Exception, String] =
+    ZIO.fail(new IOException("Wide IP Error"))
+
+  def callHttpEndpoint_v2(url: String): IO[IOException, String] =
+    callHttpEndpointWideError(url).refineOrDie {
+      case ioe: IOException => ioe
+      case _:   Exception   => new IOException("Generic Exception")
+    }
+
+  // Turn defects into the error channel
+  val endpointCallWithError: IO[String, String] = endpointCallWithDefects.unrefine {
+    case e: Throwable => e.getMessage()
+  }
+
+  val endpointCallWithError_v2 = callHttpEndpoint("dbcas.com").unrefineWith {
+    case e: Throwable => ZIO.fail(e.getMessage())
+  }(_ => ZIO.fail("Boom Shaka"))
+
+  /*
+    Combine effects with different errors
+   */
+
+  private case class IndexError(message: String)
+  private case class DbError(message: String)
+
+  private val callApi:    IO[IndexError, String] = ZIO.succeed("fetching from page")
+  private val callFromDb: IO[DbError, Int]       = ZIO.succeed(1)
+
+  // This feature is only available in scala 3 where we can use union types to find the appropriate error
+  private val combined_mode1: IO[IndexError | DbError, (String, Int)] =
+    for
+      page <- callApi
+      db   <- callFromDb
+    yield (page, db)
+
+  // In scala 2.x this is usless as we lose type safety as object does not mean anything
+  private val combined_mode2: IO[Object, (String, Int)] =
+    for
+      page <- callApi
+      db   <- callFromDb
+    yield (page, db)
+
+  /*
+    Solutions:
+      - design an error model create error ADTs sealed trait and so on...
+      - use scala 3 union types
+      -  use .mapError to some common error type
+   */
+
+  /** Exercise:
+    */
+
+  // 1 - make this effect a TYPED failure
+  val aBadFailure: ZIO[Any, Nothing, Int] = ZIO.succeed[Int](throw new RuntimeException("This is bad"))
+
+  val aTypedFailure: ZIO[Any, Throwable, Int] = aBadFailure.catchAllDefect(ZIO.fail(_))
+
+  val aTypedFailure_v2: ZIO[Any, Cause[Nothing], Int] = aBadFailure.sandbox // Exposes the defect in the cause
+
+  val aTypedFailure_v3: ZIO[Any, Throwable, Int] = aBadFailure.unrefine { // Surfaces out the exception to the error channel
+    case e => e
+  }
+
+  // 2 - Take some ZIOs that can fail with throwable and just surface out a bunch of exceptions
+  // transform a zio to another zio with narrower exception type
+  def ioException[R, A](zio: ZIO[R, Throwable, A]): ZIO[R, IOException, A] =
+    zio.refineOrDie {
+      case io: IOException => new IOException(io.getMessage()) // This means that we are only taking IO rest will be considered as defect
+    }
+
+  // 3 - Work with Either and expose the undesired value in the value side or combnie either in error channel
+  def left[R, E, A, B](zio: ZIO[R, E, Either[A, B]]): ZIO[R, Either[E, A], B] =
+    zio.foldZIO(
+      e => ZIO.fail(Left(e)),
+      e =>
+        e match {
+          case Left(a)  => ZIO.fail(Right(a))
+          case Right(b) => ZIO.succeed(b)
+        },
+    )
+
+  // 4 - deal with errors both on error channel and value channel
+  val database = Map("Daniel" -> 123, "alice" -> 789)
+
+  case class QueryError(reason: String)
+  case class UserProfile(name: String, phone: Int)
+
+  def lookupProfile(userId: String): ZIO[Any, QueryError, Option[UserProfile]] =
+    if userId != userId.toLowerCase() then ZIO.fail(QueryError("UserId is not valid"))
+    else ZIO.succeed(database.get(userId).map(phone => UserProfile(userId, phone)))
+
+  // surface out all the failed cases of this API
+  // ZIO[Any, <all_possible_errors>, UserProfile]
+  def betterLookupProfile(userId: String): ZIO[Any, Option[QueryError], UserProfile] =
+    if userId != userId.toLowerCase() then ZIO.fail(Some(QueryError("UserId is not valid")))
+    else
+      database.get(userId) match
+        case None        => ZIO.fail(Option.empty[QueryError])
+        case Some(phone) => ZIO.succeed(UserProfile(userId, phone))
+
+  override def run: ZIO[Any & (ZIOAppArgs & Scope), Any, Any] = aTypedFailure_v3

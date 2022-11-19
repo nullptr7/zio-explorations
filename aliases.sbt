@@ -26,7 +26,7 @@ addCommandAlias(
 )
 addCommandAlias(
   "all",
-  "reload; update; clean; compile"
+  "reload; update; clean; compile",
 )
 
 onLoadMessage +=

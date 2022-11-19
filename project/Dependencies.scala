@@ -5,7 +5,7 @@ object Dependencies {
   object ch {
     object `qos.logback` {
       val `logback-classic` =
-        "ch.qos.logback" % "logback-classic" % "1.4.4"
+        "ch.qos.logback" % "logback-classic" % "1.4.5"
     }
   }
 
@@ -19,10 +19,10 @@ object Dependencies {
   object dev {
     object zio {
       val zio =
-        "dev.zio" %% "zio" % "2.0.3"
+        "dev.zio" %% "zio" % "2.0.4"
 
       val `zio-test` =
-        "dev.zio" %% "zio-test" % "2.0.3"
+        "dev.zio" %% "zio-test" % "2.0.4"
 
       val `zio-json` =
         "dev.zio" %% "zio-json" % "0.3.0"
@@ -65,7 +65,7 @@ object Dependencies {
 
     object slf4j {
       val `slf4j-api` =
-        "org.slf4j" % "slf4j-api" % "2.0.3"
+        "org.slf4j" % "slf4j-api" % "2.0.4"
     }
 
     object scalatestplus {

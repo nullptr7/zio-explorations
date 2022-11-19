@@ -21,7 +21,7 @@ object ApplicationConfig:
   object AppConfig:
     private lazy val appConfigLayer: ZLayer[Any, Nothing, AppConfig] = ZLayer {
       val getTypesafeConfig = ZIO.attempt(ConfigFactory.load.resolve)
-      val getConfig = read(descriptor[AppConfig].from(fromTypesafeConfig(getTypesafeConfig)))
+      val getConfig         = read(descriptor[AppConfig].from(fromTypesafeConfig(getTypesafeConfig)))
       getConfig.orDie
     }
 
