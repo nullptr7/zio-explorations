@@ -3,50 +3,60 @@ package rjvm
 package episode2
 
 import zio.*
+import java.util.concurrent.TimeUnit
+import java.io.IOException
 
-object ZIODependencies extends ZIOAppDefault:
+object ZIODependencies /* extends ZIOAppDefault */:
 
   // app to subscribe users to newsletter
-  private case class User(name: String, email: String)
+  case class User(name: String, email: String)
 
-  private class UserSubscription(emailService: EmailService, userDatabase: UserDatabase):
+  class UserSubscription(emailService: EmailService, userDatabase: UserDatabase):
     def subscribeUser(user: User): Task[Unit] =
       for
         _ <- emailService.email(user)
         _ <- userDatabase.insert(user)
       yield ()
 
-  private object UserSubscription:
+  object UserSubscription:
     def create(emailService: EmailService, userDatabase: UserDatabase): UserSubscription =
       new UserSubscription(emailService, userDatabase)
 
-  private class EmailService:
+    val live: ZLayer[EmailService & UserDatabase, Nothing, UserSubscription] = ZLayer.fromFunction(create)
+
+  class EmailService:
     def email(user: User): Task[Unit] =
       ZIO.succeed(println(s"You've just been subscribed, Welcome $user"))
 
-  private object EmailService:
+  object EmailService:
     def create(): EmailService = new EmailService()
 
-  private class UserDatabase(connectionPool: ConnectionPool):
+    val live: ZLayer[Any, Nothing, EmailService] = ZLayer.succeed(create())
+
+  class UserDatabase(connectionPool: ConnectionPool):
     def insert(user: User): Task[Unit] =
       for
         conn <- connectionPool.get
         _    <- conn.runQuery(s"INSERT INTO SUBSCRIBERS(user, email) VALUES (${user.name}, ${user.email})")
       yield ()
 
-  private object UserDatabase:
+  object UserDatabase:
     def create(connectionPool: ConnectionPool): UserDatabase =
       new UserDatabase(connectionPool)
 
-  private class ConnectionPool(nConnections: Int):
+    val live: ZLayer[ConnectionPool, Nothing, UserDatabase] = ZLayer.fromFunction(create)
+
+  class ConnectionPool(nConnections: Int):
     def get: Task[Connection] =
       ZIO.succeed(println("Acquired Connection...")) *> ZIO.succeed(Connection())
 
-  private object ConnectionPool:
+  object ConnectionPool:
     def create(nConnections: Int): ConnectionPool =
       new ConnectionPool(nConnections)
 
-  private class Connection():
+    def live(nConnections: Int): ZLayer[Any, Nothing, ConnectionPool] = ZLayer.succeed(create(nConnections))
+
+  class Connection():
     def runQuery(query: String): Task[Unit] =
       ZIO.succeed(println(s"Executing query $query"))
 
@@ -128,7 +138,7 @@ object ZIODependencies extends ZIOAppDefault:
 
   // The only difference from the previous method is the subscribe_v2 method takes the environment R from ZIO's R
 
-  private val progam_v2 =
+  val program_v2: ZIO[UserSubscription, Throwable, Unit] =
     for
       _ <- subscribe_v2(User("Foo", "foo@boo.com"))
       _ <- subscribe_v2(User("Too", "too@boo.com"))
@@ -164,10 +174,49 @@ object ZIODependencies extends ZIOAppDefault:
   private val userSubscriptionLayer: ZLayer[Any, Nothing, UserSubscription] =
     subscriptionRequirementsLayer >>> userSubscriptionServiceLayer
 
-  private val runConfiguration = progam_v2.provideLayer(userSubscriptionLayer)
+  private val runConfiguration = program_v2.provideLayer(userSubscriptionLayer)
 
-  override def run: ZIO[Any & (ZIOAppArgs & Scope), Any, Any] =
-    /*
+  /*
+    Best Practices: Write "factory" methods exposing layers in the companion objects of the services
+
+    Create layers in the companion of services that you want to expose
+   */
+  private val databaseLayerFull_v2:                 ZLayer[Any, Nothing, UserDatabase]                             = ConnectionPool.live(10) >>> UserDatabase.live
+  private val userSubscriptionRequirementsLayer_v2: ZLayer[Any, Nothing, UserDatabase & EmailService]              = databaseLayerFull_v2 ++ EmailService.live
+  private val userSubscriptionServiceLayer_v2:      ZLayer[EmailService & UserDatabase, Nothing, UserSubscription] = UserSubscription.live
+  private val userSubscriptionLayer_v2:             ZLayer[Any, Nothing, UserSubscription]                         = userSubscriptionRequirementsLayer_v2 >>> userSubscriptionServiceLayer_v2
+  private val runConfiguration_v2:                  ZIO[Any, Throwable, Unit]                                      = program_v2.provideLayer(userSubscriptionLayer_v2)
+
+  /*
+    Some more important features of ZLayer are
+   */
+  // 1. Passthrough, in this case we pass the environment(input) of the ZLayer to the value channel
+  //  Below one has both ConnectionPool and UserDatabase in the value channel
+  private val dbWithPoolLayer: ZLayer[ConnectionPool, Nothing, ConnectionPool & UserDatabase] = UserDatabase.live.passthrough
+
+  // 2. Service, in this case, we take a dependency and expose it as a value to futher layers
+  private val dbService: ZLayer[UserDatabase, Nothing, UserDatabase] = ZLayer.service[UserDatabase]
+
+  // 3. Launch, in this case, we create a service that never finishes
+  // The output will be nothing since this ZIO effect will never be completed. This is usually used during some infinite process like server or game loop etc...
+  private val infiniteService: ZIO[EmailService & UserDatabase, Nothing, Nothing] = UserSubscription.live.launch
+
+  // 4. Memoize, this feature is active by default in ZIO, which guarantees that once the ZLayer is instantiated, the same ZLayer will be reused.
+  // Unless we are explicitly calling .fresh api.
+  private val userDatabaseFresh: ZLayer[ConnectionPool, Nothing, UserDatabase] = UserDatabase.live.fresh
+
+  /*
+    Already provided services
+      Clock, Random, System, Clock
+      This comes by default in ZIOAppDefault
+   */
+  private val currentTime:     UIO[Long]                             = Clock.currentTime(TimeUnit.SECONDS)
+  private val randomValue:     UIO[Int]                              = Random.nextInt
+  private val sysVariable:     IO[SecurityException, Option[String]] = System.env("JAVA_HOME")
+  private val printLineEffect: IO[IOException, Unit]                 = Console.printLine("This is ZIO")
+
+  /* override def run: ZIO[Any & (ZIOAppArgs & Scope), Any, Any] = */
+  /*
       Advantages:
       - we don't need to care about the dependencies until the end of the world
       - all ZIOs requiring the dependency will use the SAME instances, thereby removing resource leaks
@@ -181,14 +230,14 @@ object ZIODependencies extends ZIOAppDefault:
             } yield ()
 
       - ZLayers can be created and composed much like the regular ZIOs + rich APIs
-     */
-    progam_v2.provideLayer(
-      ZLayer.succeed(
-        UserSubscription.create(
-          EmailService.create(),
-          UserDatabase.create(
-            ConnectionPool.create(10)
-          ),
-        )
+   */
+  program_v2.provideLayer(
+    ZLayer.succeed(
+      UserSubscription.create(
+        EmailService.create(),
+        UserDatabase.create(
+          ConnectionPool.create(10)
+        ),
       )
     )
+  )
