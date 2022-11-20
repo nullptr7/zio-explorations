@@ -134,12 +134,44 @@ object ZIODependencies extends ZIOAppDefault:
       _ <- subscribe_v2(User("Too", "too@boo.com"))
     yield ()
 
+  /** ZLayers
+    */
+
+  private val connectionPoolLayer: ZLayer[Any, Nothing, ConnectionPool] =
+    ZLayer.succeed(ConnectionPool.create(10))
+
+  /*
+    A ZLayer that requires a dependency (higher layer) can be built with ZLayer.fromFunction
+    this API automatically(via macro) fetches the function arguments and place them into the ZLayer's
+    dependency/environment type argument
+   */
+  private val databaseLayerUsingScala2:     ZLayer[ConnectionPool, Nothing, UserDatabase]                  = ZLayer.fromFunction(UserDatabase.create _) // if using scala2
+  private val databaseLayerUsingScala3:     ZLayer[ConnectionPool, Nothing, UserDatabase]                  = ZLayer.fromFunction(UserDatabase.create)   // if using scala3
+  private val emailServiceLayer:            ZLayer[Any, Nothing, EmailService]                             = ZLayer.succeed(EmailService.create())
+  private val userSubscriptionServiceLayer: ZLayer[UserDatabase & EmailService, Nothing, UserSubscription] = ZLayer.fromFunction(UserSubscription.create)
+
+  // The above ZLayers are dependent on one another in some way..
+  // This allows us to compose the layers to form one big layer
+  // By composing layers
+  // Vertical Composition
+  private val databaseLayerFull: ZLayer[Any, Nothing, UserDatabase] = connectionPoolLayer >>> databaseLayerUsingScala2
+
+  // Horizontal Composition - combines the dependencies of both layers and values of both layers
+  // In horizontal composition, the error channel is combined with the lowest common ancestor of both
+  private val subscriptionRequirementsLayer: ZLayer[Any, Nothing, UserDatabase & EmailService] = databaseLayerFull ++ emailServiceLayer
+
+  // We can also mix and match all the above layers
+  private val userSubscriptionLayer: ZLayer[Any, Nothing, UserSubscription] =
+    subscriptionRequirementsLayer >>> userSubscriptionServiceLayer
+
+  private val runConfiguration = progam_v2.provideLayer(userSubscriptionLayer)
+
   override def run: ZIO[Any & (ZIOAppArgs & Scope), Any, Any] =
     /*
       Advantages:
       - we don't need to care about the dependencies until the end of the world
       - all ZIOs requiring the dependency will use the SAME instances, thereby removing resource leaks
-      - can use different instances of the same type for different needs (e.g. testing), this we could not do effectively 
+      - can use different instances of the same type for different needs (e.g. testing), this we could not do effectively
           in our previous case because in below userSubscriptionService_v2 will be the same hence difficult to test and
           provide mock userSubscriptionService
           private def subscribe(user: User): Task[Unit] =
@@ -149,7 +181,7 @@ object ZIODependencies extends ZIOAppDefault:
             } yield ()
 
       - ZLayers can be created and composed much like the regular ZIOs + rich APIs
-    */
+     */
     progam_v2.provideLayer(
       ZLayer.succeed(
         UserSubscription.create(
