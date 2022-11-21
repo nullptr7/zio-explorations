@@ -31,21 +31,21 @@ addCommandAlias(
 
 onLoadMessage +=
   s"""|
-      |╭─────────────────────────────────╮
-      |│     List of defined ${styled("aliases")}     │
-      |├─────────────┬───────────────────┤
-      |│ ${styled("l")} | ${styled("ll")} | ${styled("ls")} │ projects          │
-      |│ ${styled("cd")}          │ project           │
-      |│ ${styled("root")}        │ cd root           │
-      |│ ${styled("c")}           │ compile           │
-      |│ ${styled("ca")}          │ compile all       │
-      |│ ${styled("t")}           │ test              │
-      |│ ${styled("r")}           │ run               │
-      |│ ${styled("rs")}          │ reStart           │
-      |│ ${styled("s")}           │ reStop            │
-      |│ ${styled("star")}        │ thankYouStars     │
-      |│ ${styled("styleCheck")}  │ fmt check         │
-      |│ ${styled("styleFix")}    │ fmt               │
-      |│ ${styled("up2date")}     │ dependencyUpdates │
-      |│ ${styled("all")}         │ All               │
-      |╰─────────────┴───────────────────╯""".stripMargin
+      |╭──────────────────────────────────────────────╮
+      |│     List of defined ${styled("aliases")}                  │
+      |├─────────────┬────────────────────────────────┤
+      |│ ${styled("l")} | ${styled("ll")} | ${styled("ls")} │ projects                       │
+      |│ ${styled("cd")}          │ project                        │
+      |│ ${styled("root")}        │ cd root                        │
+      |│ ${styled("c")}           │ compile                        │
+      |│ ${styled("ca")}          │ compile all                    │
+      |│ ${styled("t")}           │ test                           │
+      |│ ${styled("r")}           │ run                            │
+      |│ ${styled("rs")}          │ reStart                        │
+      |│ ${styled("s")}           │ reStop                         │
+      |│ ${styled("star")}        │ thankYouStars                  │
+      |│ ${styled("styleCheck")}  │ fmt check                      │
+      |│ ${styled("styleFix")}    │ fmt                            │
+      |│ ${styled("up2date")}     │ dependencyUpdates              │
+      |│ ${styled("all")}         │ reload, update, clean, compile │
+      |╰─────────────┴────────────────────────────────╯""".stripMargin
