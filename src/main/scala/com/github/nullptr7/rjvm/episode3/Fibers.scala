@@ -37,7 +37,7 @@ object Fibers extends ZIOAppDefault:
 
   // Other operaions on Fiber is join, this is similar to what we have in Threads. Where the Fiber.join means it wait before the given thread is completed.
 
-  // j1. oin a fiber
+  // 1. join a fiber
   def runOnAnotherThread[R, E, A](zio: ZIO[R, E, A]) =
     for
       fib    <- zio.fork
