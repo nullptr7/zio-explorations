@@ -64,6 +64,32 @@ object FibersExercise extends ZIOAppDefault:
     writer.flush()
     writer.close()
 
+    // part 1 = an effect which reads one file and counts the words there.
+    // one fiber for every one file...
+    def countWords(path: String): UIO[Int] =
+      ZIO.succeed {
+        val source = scala.io.Source.fromFile(path)
+        val nWords = source.getLines().mkString(" ").split(" ").count(_.nonEmpty)
+        source.close()
+        nWords
+      }
+
+    // part 2- Spin up fibers for all the files
+    def wordCountParallel(n: Int): UIO[Int] =
+      val effects: Seq[ZIO[Any, Nothing, Int]] =
+        (1 to n)
+          .map(i => s"src/main/resources/test_$i.txt")
+          .map(countWords) // list of effects
+          .map(_.fork) // list of effects returning fibers
+          .map((fiberEff: ZIO[Any, Nothing, Fiber[Nothing, Int]]) => fiberEff.flatMap(_.join)) // list of effects returning values (count of words)
+
+      effects.reduce { (zioa, ziob) =>
+        for
+          a <- zioa
+          b <- ziob
+        yield a + b
+      }
+
   override def run: ZIO[Any & (ZIOAppArgs & Scope), Any, Any] =
     /* ZIO.succeed(
       (1 to 10).foreach { counter =>
