@@ -126,7 +126,7 @@ object WordsCounterApp extends ZIOAppDefault:
         .map(_ => ())
 
     val program = for {
-      _ <- FileDeleteService.cleanUp()
+      _     <- FileDeleteService.cleanUp()
       _     <- genProgram
       y     <- ZIO.service[WordCountService]
       count <- y.process
