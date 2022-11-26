@@ -32,7 +32,7 @@ object WordsCounterApp extends ZIOAppDefault:
       } yield contents
 
   private object ContentGeneratorService:
-    def create(): ContentGeneratorService = new ContentGeneratorService()
+    private def create(): ContentGeneratorService = new ContentGeneratorService()
 
     val live: ZLayer[Any, Nothing, ContentGeneratorService] = ZLayer.succeed(create())
 
@@ -50,7 +50,7 @@ object WordsCounterApp extends ZIOAppDefault:
       } yield ()
 
   private object FileGeneratorService:
-    def create(contentGeneratorService: ContentGeneratorService): FileGeneratorService =
+    private def create(contentGeneratorService: ContentGeneratorService): FileGeneratorService =
       new FileGeneratorService(contentGeneratorService)
 
     val live: ZLayer[ContentGeneratorService, Nothing, FileGeneratorService] = ZLayer.fromFunction(create)
@@ -92,9 +92,9 @@ object WordsCounterApp extends ZIOAppDefault:
           f.listFiles().foreach(_.delete())
         }
 
-  private val a = ContentGeneratorService.live >>> FileGeneratorService.live
+  private val fileGeneratorServiceLayer = ContentGeneratorService.live >>> FileGeneratorService.live
 
-  private val b = a ++ WordCountService.live(10)
+  private val wordCountServiceLayer = fileGeneratorServiceLayer ++ WordCountService.live(10)
 
   /* private val randomContentGenerator: UIO[String] =
     for {
@@ -115,25 +115,23 @@ object WordsCounterApp extends ZIOAppDefault:
   private val randomFileGenerator: UIO[Unit] = ??? */
 
   override def run: ZIO[Any & (ZIOAppArgs & Scope), Any, Any] =
-    val genProgram =
+    val generateFileWithRandomContents =
       ZIO
         .loop(0)(_ <= 10, _ + 1)(co =>
           for {
-            x <- ZIO.service[FileGeneratorService]
-            _ <- x.generate(s"src/main/resources/test_${co}.txt")
+            fileGenService <- ZIO.service[FileGeneratorService]
+            _              <- fileGenService.generate(s"src/main/resources/test_${co}.txt")
           } yield ()
         )
         .map(_ => ())
 
     val program = for {
-      _     <- FileDeleteService.cleanUp()
-      _     <- genProgram
-      y     <- ZIO.service[WordCountService]
-      count <- y.process
-      _     <- Console.printLine(s"Total Number of Words - ${count}")
-      _     <- FileDeleteService.cleanUp()
+      _                <- FileDeleteService.cleanUp()
+      _                <- generateFileWithRandomContents
+      wordCountService <- ZIO.service[WordCountService]
+      count            <- wordCountService.process
+      _                <- Console.printLine(s"Total Number of Words - ${count}")
+      _                <- FileDeleteService.cleanUp()
     } yield ()
 
-    program.provideLayer(
-      b
-    )
+    program.provideLayer(wordCountServiceLayer)
