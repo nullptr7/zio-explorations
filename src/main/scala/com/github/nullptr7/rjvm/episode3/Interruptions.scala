@@ -48,7 +48,7 @@ object Interruptions extends ZIOAppDefault:
     here the child fiber takes longer time to complete rather than its Parent
     So in this case, if the parent dies the child automatically dies irrespective it has completed its work or not.
    */
-  val parentEffect =
+  private val parentEffect =
     ZIO.succeed("Spwaning fiber").debugThread *>
       zioWithTime.fork *>                          // child fiber
       ZIO.sleep(1.second) *>
@@ -56,20 +56,20 @@ object Interruptions extends ZIOAppDefault:
 
   // If you want to uproot the child fiber from the current parent, we can uproot and create a child of the main application
 
-  val parentEffect_v2 =
+  private val parentEffect_v2 =
     ZIO.succeed("Spwaning fiber").debugThread *>
       zioWithTime.forkDaemon *>                    // this child fiber is child of main application instead
       ZIO.sleep(1.second) *>
       ZIO.succeed("Parent successful").debugThread // done here
 
-  val testOutLivingParent =
+  private val testOutLivingParent =
     for
       parentEffectFib <- parentEffect.fork
       _               <- ZIO.sleep(3.seconds)
       _               <- parentEffectFib.join
     yield ()
 
-  val testOutLivingParent_v2 =
+  private val testOutLivingParent_v2 =
     for
       parentEffectFib <- parentEffect_v2.fork
       _               <- ZIO.sleep(3.seconds)
@@ -77,11 +77,11 @@ object Interruptions extends ZIOAppDefault:
     yield ()
 
   // Another situation, where fiber maybe automatically interrupted is RACING
-  val slowEffect = (ZIO.sleep(2.seconds) *> ZIO.succeed("slow")).debugThread.onInterrupt(ZIO.succeed("[slow] interrupted").debugThread)
-  val fastEffect = (ZIO.sleep(1.second) *> ZIO.succeed("fast")).debugThread.onInterrupt(ZIO.succeed("[fast] interrupted").debugThread)
+  private val slowEffect = (ZIO.sleep(2.seconds) *> ZIO.succeed("slow")).debugThread.onInterrupt(ZIO.succeed("[slow] interrupted").debugThread)
+  private val fastEffect = (ZIO.sleep(1.second) *> ZIO.succeed("fast")).debugThread.onInterrupt(ZIO.succeed("[fast] interrupted").debugThread)
 
-  val aRace    = fastEffect.race(slowEffect)
-  val testRace = aRace.fork *> ZIO.sleep(3.seconds)
+  private val aRace    = fastEffect.race(slowEffect)
+  private val testRace = aRace.fork *> ZIO.sleep(3.seconds)
 
   /** Exercise:
     */
@@ -90,7 +90,12 @@ object Interruptions extends ZIOAppDefault:
       - if ZIO fails before timeout => a failed effect
       - if ZIO takes longer than timeout => interrupt the effect
    */
-  def timeout[R, E, A](zio: ZIO[R, E, A], time: Duration): ZIO[R, E, A] = ???
+  private def timeout[R, E, A](zio: ZIO[R, E, A], time: Duration): ZIO[R, E, A] =
+    for
+      fibZio <- zio.onInterrupt(ZIO.succeed("This ZIO is interrupted")).fork
+      _      <- (ZIO.sleep(time) *> fibZio.interrupt).fork
+      joined <- fibZio.join
+    yield joined
 
   /* 2 - timeout v2 =>
       - if ZIO is successful before timeout => a successful effect containing SOME
@@ -98,6 +103,25 @@ object Interruptions extends ZIOAppDefault:
       - if ZIO takes longer than timeout => interrupt the effect and return successful ZIO with NONE
     // hint = foldCauseZIO
    */
-  def timeout_v2[R, E, A](zio: ZIO[R, E, A], time: Duration): ZIO[R, E, Option[A]] = ???
+  private def timeout_v2[R, E, A](zio: ZIO[R, E, A], time: Duration): ZIO[R, E, Option[A]] =
+    /*
+    for
+      fibZio <- zio
+                  .map(Option(_))
+                  .onInterrupt(ZIO.succeed(None))
+                  .fork
+      _      <- (ZIO.sleep(time) *> fibZio.interrupt).fork
+      joined <- fibZio.join
+    yield joined
+     */
 
-  override def run: ZIO[Any, Any, Any] = testRace
+    timeout(zio, time)
+      .foldCauseZIO(
+        cause => if cause.isInterrupted then ZIO.succeed(None) else ZIO.failCause(cause),
+        value => ZIO.succeed(Some(value)),
+      )
+
+  override def run: ZIO[Any, Any, Any] =
+
+    val aZIO = ZIO.succeed("Starting...").debugThread *> ZIO.sleep(2.seconds) *> ZIO.succeed("I am done...").debugThread
+    timeout_v2(aZIO, 4.seconds).debugThread
