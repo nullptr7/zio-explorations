@@ -55,7 +55,7 @@ object Parallelism extends ZIOAppDefault:
   private val collectedValues: ZIO[Any, Nothing, Seq[Int]] = ZIO.collectAllPar(effects) // traverse
 
   // foreachPar
-  private val printParallel = ZIO.foreachPar((1 to 10).toList)(i => ZIO.succeed(println(i)))
+  private val printParallel: ZIO[Any, Nothing, List[Unit]] = ZIO.foreachPar((1 to 10).toList)(i => ZIO.succeed(println(i)))
 
   // reduceAllPar, mergeAllPar
   private val sumPar    = ZIO.reduceAllPar(ZIO.succeed(0), effects)(_ + _)
@@ -72,7 +72,7 @@ object Parallelism extends ZIOAppDefault:
   /** Exercise: do word counting exercise, using parallel combinator
     */
 
-  def countWords(path: String): UIO[Int] =
+  private def countWords(path: String): UIO[Int] =
     ZIO.succeed {
       val source = scala.io.Source.fromFile(path)
       val nWords = source.getLines().mkString(" ").split(" ").count(_.nonEmpty)
@@ -80,7 +80,15 @@ object Parallelism extends ZIOAppDefault:
       nWords
     }
 
+  private val anEffectOfCountingWords =
+    (1 to 10).map(count => countWords(s"src/main/resources/test_$count.txt"))
+
+  private val finalCount    = ZIO.mergeAllPar(anEffectOfCountingWords)(0)(_ + _)
+  private val finalCount_v2 = ZIO.collectAllPar(anEffectOfCountingWords).map(_.sum)
+  private val finalCount_v3 = ZIO.reduceAllPar(ZIO.succeed(0), anEffectOfCountingWords)(_ + _)
+
   override def run: ZIO[Any, Any, Any] =
     // myZipPar(ZIO.succeed(42), ZIO.succeed("Scala")).debugThread
 
-    printParallel.debugThread *> sumPar.debugThread *> sumPar_v2.debugThread
+    /*printParallel.debugThread *> sumPar.debugThread *> sumPar_v2.debugThread *>*/
+    finalCount.debugThread *> finalCount_v2.debugThread *> finalCount_v3.debugThread
