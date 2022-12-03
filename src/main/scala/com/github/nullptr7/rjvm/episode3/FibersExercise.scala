@@ -17,13 +17,13 @@ object FibersExercise extends ZIOAppDefault:
 
   // 1. Zip two fibers without using the 'zip' API
   // Hint: create a fiber that waits for both of these fibers
-  def zipFibers[E, A, B](fiber1: Fiber[E, A], fiber2: Fiber[E, B]): ZIO[Any, Nothing, Fiber[E, (A, B)]] =
+  private def zipFibers[E, A, B](fiber1: Fiber[E, A], fiber2: Fiber[E, B]): ZIO[Any, Nothing, Fiber[E, (A, B)]] =
     (for {
       f1 <- fiber1.join
       f2 <- fiber2.join
     } yield (f1, f2)).fork
 
-  val zippedFibers_v2 =
+  private val zippedFibers_v2 =
     for
       fib1   <- ZIO.succeed("Result from fiber1").debugThread.fork
       fib2   <- ZIO.succeed("Result from fiber2").debugThread.fork
@@ -31,14 +31,14 @@ object FibersExercise extends ZIOAppDefault:
       tuple  <- fibers.join
     yield tuple
 
-  def zipFibers_v2[E, E1 <: E, E2 <: E, A, B](fiber1: Fiber[E1, A])(fiber2: Fiber[E2, B]): ZIO[Any, Nothing, Fiber[E, (A, B)]] =
+  private def zipFibers_v2[E, E1 <: E, E2 <: E, A, B](fiber1: Fiber[E1, A])(fiber2: Fiber[E2, B]): ZIO[Any, Nothing, Fiber[E, (A, B)]] =
     (for {
       f1 <- fiber1.join
       f2 <- fiber2.join
     } yield (f1, f2)).fork
 
   // 2. same thing with orElse
-  def chainFibers[E, A](fiber1: Fiber[E, A], fiber2: Fiber[E, A]): ZIO[Any, Nothing, Fiber[E, A]] =
+  private def chainFibers[E, A](fiber1: Fiber[E, A], fiber2: Fiber[E, A]): ZIO[Any, Nothing, Fiber[E, A]] =
     val f1          = fiber1.join
     val f2          = fiber2.join
     val finalEffect = f1.orElse(f2) // here we are using orElse to ZIO effect not of fiber
@@ -47,7 +47,7 @@ object FibersExercise extends ZIOAppDefault:
   // 3. distributing task in between many fibers
   // spawn n fibers, count the n in each file,
   // then aggregate all the results together in one big number
-  def generateRandomFile(path: String): Unit =
+  private def generateRandomFile(path: String): Unit =
     val random   = scala.util.Random
     val chars    = 'a' to 'z'
     val nWords   = random.nextInt(2000) // we gonna generate atmost 2000 words
@@ -66,7 +66,7 @@ object FibersExercise extends ZIOAppDefault:
 
   // part 1 = an effect which reads one file and counts the words there.
   // one fiber for every one file...
-  def countWords(path: String): UIO[Int] =
+  private def countWords(path: String): UIO[Int] =
     ZIO.succeed {
       val source = scala.io.Source.fromFile(path)
       val nWords = source.getLines().mkString(" ").split(" ").count(_.nonEmpty)
@@ -75,7 +75,7 @@ object FibersExercise extends ZIOAppDefault:
     }
 
   // part 2- Spin up fibers for all the files
-  def wordCountParallel(n: Int): UIO[Int] =
+  private def wordCountParallel(n: Int): UIO[Int] =
     val effects: Seq[ZIO[Any, Nothing, Int]] =
       (1 to n)
         .map(i => s"src/main/resources/test_$i.txt")
