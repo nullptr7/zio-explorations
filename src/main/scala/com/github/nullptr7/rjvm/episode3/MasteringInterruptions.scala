@@ -147,7 +147,14 @@ object MasteringInterruptions extends ZIOAppDefault:
     yield ()
 
   // Exercise 3
-  private val threeStepProram = ZIO.uninterruptibleMask { restore =>
+  /* Ans.
+    In this case, when 'threeStepProgram' is called
+    "interruptible"
+    "uninterruptible"
+    "INTERRUPTING!" 
+    // then the call is interrupted
+  */
+  private val threeStepProgram = ZIO.uninterruptibleMask { restore =>
     val sequence = for
       _ <- restore(ZIO.succeed("interruptible").debugThread *> ZIO.sleep(1.second))
       _ <- ZIO.succeed("uninterruptible").debugThread *> ZIO.sleep(1.second)
@@ -163,4 +170,4 @@ object MasteringInterruptions extends ZIOAppDefault:
 
   override def run: ZIO[Any & (ZIOAppArgs & Scope), Any, Any] =
     /* cancellationEffPayment *> */ /* noCancellationEffPayment *> */ /* authProgram *> */ /* authProgram_v2 *> */
-    /* unCancelBeforeMol *> */ /* authProgram_v3 *> */ threeStepProram
+    /* unCancelBeforeMol *> */ /* authProgram_v3 *> */ threeStepProgram
