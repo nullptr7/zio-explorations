@@ -36,7 +36,7 @@ object Resources extends ZIOAppDefault:
       _    <- fib.join
     yield () // this does not leak resources as we are effectively closing it. However the above is tedius as this has a lot of overhead of managing
 
-  // Lesser tedius approach is below
+  // Lesser tedious approach is below
   /*
   acquireRelease
     - acquiring cannot be interrupted
@@ -76,21 +76,21 @@ object Resources extends ZIOAppDefault:
     for
       // scanner <- openFileScanner(path)
       lines <- ZIO.acquireRelease(openFileScanner(path))(s => ZIO.succeed("Closing the scanner").debugThread *> ZIO.succeed(s.close()))
-      _     <-
-        def readLineByLine(): UIO[Unit] =
-          if lines.hasNextLine() then ZIO.succeed(lines.nextLine()).debugThread *> ZIO.sleep(100.millis) *> readLineByLine()
-          else ZIO.unit
-        readLineByLine()
+      _     <- readLineByLine(lines)
     yield ()
 
-  private def aquireOpenFile_v2(path: String) =
+  private def readLineByLine(lines: Scanner): UIO[Unit] =
+    if lines.hasNextLine then ZIO.succeed(lines.nextLine()).debugThread *> ZIO.sleep(100.millis) *> readLineByLine(lines)
+    else ZIO.unit
+
+  private def acquireOpenFile_v2(path: String) =
     ZIO.succeed(s"Opening file at $path").debugThread *>
       ZIO.acquireReleaseWith(
         openFileScanner(path)
       )(scanner => ZIO.succeed(s"Closing file at $path").debugThread *> ZIO.succeed(scanner.close()))(readLines)
 
   private def readLines(scanner: Scanner): UIO[Unit] =
-    if scanner.hasNextLine() then ZIO.succeed(scanner.nextLine()).debugThread *> ZIO.sleep(100.millis) *> readLines(scanner)
+    if scanner.hasNextLine then ZIO.succeed(scanner.nextLine()).debugThread *> ZIO.sleep(100.millis) *> readLines(scanner)
     else ZIO.unit
 
   private val testInterruptFileDisplay =
@@ -107,7 +107,7 @@ object Resources extends ZIOAppDefault:
 
   // acquireRelease vs acquireReleaseWith
 
-  // Below is very tedius and difficult to debug when used with acquireReleaseWith
+  // Below is very tedious and difficult to debug when used with acquireReleaseWith
   private def connFromConfig(path: String): UIO[Unit] =
     ZIO.acquireReleaseWith(openFileScanner(path))(scanner => ZIO.succeed("closing file").debugThread *> ZIO.succeed(scanner.close())) { scanner =>
       ZIO.acquireReleaseWith(Connection.create(scanner.nextLine()))(_.close()) { conn =>
