@@ -25,7 +25,12 @@ lazy val app =
     .settings(name := "app")
     .settings(publish := {}, publish / skip := true)
     .settings(commonSettings)
-    .settings(libraryDependencies ++= testDep ++ zioDep ++ loggingDep)
+    .settings(libraryDependencies ++= testDep ++ zioDep ++ loggingDep ++ apacheDep)
+
+lazy val apacheDep =
+  Seq (
+    org.apache.`httpcomponents-client5`
+  )
 
 lazy val zioDep =
   Seq(
