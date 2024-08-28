@@ -2,7 +2,7 @@ import Dependencies._
 import Dependencies.{ IO => io }
 
 ThisBuild / organization := "com.github"
-ThisBuild / scalaVersion := "3.2.0"
+ThisBuild / scalaVersion := "3.3.3"
 
 ThisBuild / scalacOptions ++=
   Seq(

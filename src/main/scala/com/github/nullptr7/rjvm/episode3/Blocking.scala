@@ -23,11 +23,10 @@ object Blocking extends ZIOAppDefault:
 
   // Ideally we should run blocking calls under zio blocking thread pool i.e. delegate to ZIO blocking thread pool
   // Below ZIO effect will run on seperate thread pool mostly it will be 'zio-default-blocking-x' so that the regular thread pool is not blocked
-  private val aBlockingZIO = ZIO.attemptBlocking {
+  private val aBlockingZIO = ZIO.attemptBlocking:
     println(s"[${Thread.currentThread().getName()}] running long computation...")
     Thread.sleep(4000)
     42
-  }
 
   // The issue above is, blocking code cannot usually be interrupted for e.g.
   /*
@@ -48,11 +47,10 @@ object Blocking extends ZIOAppDefault:
     * This can be an issue, because when we interrupt, the ZIO will signal that thread to throw 'InterruptedException' and if our code had
     * catching mechanism then this catch will be served and we will not be able to interrupt successfully.
     */
-  private val aBlockingInterruptibleZIO = ZIO.attemptBlockingInterrupt {
+  private val aBlockingInterruptibleZIO = ZIO.attemptBlockingInterrupt:
     println(s"[${Thread.currentThread().getName()}] running long computation...")
     Thread.sleep(4000)
     42
-  }
 
   /** Option 3: The best way to do
     * Set some form of flag or switch inside of the computation

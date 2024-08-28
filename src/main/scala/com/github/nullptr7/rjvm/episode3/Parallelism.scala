@@ -40,12 +40,11 @@ object Parallelism extends ZIOAppDefault:
                  case Exit.Failure(_) => zioFibB.interrupt
     yield (exitA, exitB)
 
-    exits.flatMap {
+    exits.flatMap:
       case (Exit.Success(a), Exit.Success(b))           => ZIO.succeed((a, b))
       case (Exit.Success(_), Exit.Failure(cause))       => ZIO.failCause(cause)
       case (Exit.Failure(cause), Exit.Success(_))       => ZIO.failCause(cause)
       case (Exit.Failure(cause1), Exit.Failure(cause2)) => ZIO.failCause(cause1 && cause2)
-    }
 
   // more parallel combinators
   // zipPar, zipWithPar
@@ -73,12 +72,11 @@ object Parallelism extends ZIOAppDefault:
     */
 
   private def countWords(path: String): UIO[Int] =
-    ZIO.succeed {
+    ZIO.succeed:
       val source = scala.io.Source.fromFile(path)
       val nWords = source.getLines().mkString(" ").split(" ").count(_.nonEmpty)
       source.close()
       nWords
-    }
 
   private val anEffectOfCountingWords =
     (1 to 10).map(count => countWords(s"src/main/resources/test_$count.txt"))

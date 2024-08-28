@@ -19,11 +19,10 @@ object ApplicationConfig:
     )
 
   object AppConfig:
-    private lazy val appConfigLayer: ZLayer[Any, Nothing, AppConfig] = ZLayer {
+    private lazy val appConfigLayer: ZLayer[Any, Nothing, AppConfig] = ZLayer:
       val getTypesafeConfig = ZIO.attempt(ConfigFactory.load.resolve)
       val getConfig         = read(descriptor[AppConfig].from(fromTypesafeConfig(getTypesafeConfig)))
       getConfig.orDie
-    }
 
     val live: ZLayer[Any, Nothing, AppConfig & HttpConfig & DatabaseConfig] =
       ZLayer.make[AppConfig & HttpConfig & DatabaseConfig](

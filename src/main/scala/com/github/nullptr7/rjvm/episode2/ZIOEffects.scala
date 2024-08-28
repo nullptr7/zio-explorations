@@ -94,12 +94,10 @@ object ZIOEffects extends App:
     zioA.flatMap(_ => runForever(zioA))
     // zioA *> runForever(zio)
 
-  val endlessLoop = runForever {
-    ZIO.succeed {
+  val endlessLoop = runForever:
+    ZIO.succeed:
       println("Loading...")
       Thread.sleep(1000)
-    }
-  }
 
   // 4. Convert value of ZIO to something else.
   def convert[R, E, A, B](zioA: ZIO[R, E, A])(b: B): ZIO[R, E, B] =

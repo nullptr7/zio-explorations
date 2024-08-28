@@ -40,13 +40,12 @@ object WordsCounterApp extends ZIOAppDefault:
     def generate(path: String): UIO[Unit] =
       for {
         contents <- contentGeneratorService.generate
-        _        <- ZIO.succeed {
+        _        <- ZIO.succeed:
                       val aFile  = new File(path)
                       val writer = new FileWriter(aFile)
                       writer.write(contents.value)
                       writer.flush()
                       writer.close()
-                    }
       } yield ()
 
   private object FileGeneratorService:
@@ -57,12 +56,11 @@ object WordsCounterApp extends ZIOAppDefault:
 
   private class WordCountService(n: Int):
     private def countWords(path: String): UIO[Int] =
-      ZIO.succeed {
+      ZIO.succeed:
         val source = scala.io.Source.fromFile(path)
         val nWords = source.getLines().mkString(" ").split(" ").count(_.nonEmpty)
         source.close()
         nWords
-      }
 
     val process: UIO[Int] =
       val effects: Seq[ZIO[Any, Nothing, Int]] =
@@ -87,10 +85,9 @@ object WordsCounterApp extends ZIOAppDefault:
   private object FileDeleteService:
     def cleanUp(): IO[Throwable, Unit] =
       ZIO
-        .attempt {
+        .attempt:
           val f = new File("src/main/resources")
           f.listFiles().foreach(_.delete())
-        }
 
   private val fileGeneratorServiceLayer = ContentGeneratorService.live >>> FileGeneratorService.live
 
