@@ -67,12 +67,11 @@ object FibersExercise extends ZIOAppDefault:
   // part 1 = an effect which reads one file and counts the words there.
   // one fiber for every one file...
   private def countWords(path: String): UIO[Int] =
-    ZIO.succeed {
+    ZIO.succeed:
       val source = scala.io.Source.fromFile(path)
       val nWords = source.getLines().mkString(" ").split(" ").count(_.nonEmpty)
       source.close()
       nWords
-    }
 
   // part 2- Spin up fibers for all the files
   private def wordCountParallel(n: Int): UIO[Int] =

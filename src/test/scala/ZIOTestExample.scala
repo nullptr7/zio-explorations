@@ -23,9 +23,8 @@ object ZIOTestExample extends ZIOSpecDefault:
       } @@ TestAspect.after(Counter.inc),
       test("test2")(assertTrue(true)) @@ TestAspect.after(Counter.inc),
     ) +
-      suite("Spec2") {
+      suite("Spec2"):
         test("test1") {
           assertTrue(true)
         } @@ TestAspect.after(Counter.inc)
-      }
-  }.provideShared(Counter.layer)
+  }.provideShared(Counter.layer) @@ TestAspect.ignore

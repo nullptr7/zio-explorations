@@ -20,6 +20,5 @@ object ZIOScopeDemo extends ZIOAppDefault:
     ZIO.acquireRelease(acquire(name))(release(_))
 
   private def contents(name: => String): Task[Chunk[String]] =
-    ZIO.scoped {
+    ZIO.scoped:
       source(name).flatMap(s => ZIO.attemptBlocking(Chunk.fromIterator(s.getLines())))
-    }

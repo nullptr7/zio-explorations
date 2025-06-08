@@ -10,7 +10,7 @@ object ZIOApps:
   def main(args: Array[String]): Unit =
     val runtime = Runtime.default
     given trace: Trace = Trace.empty
-    Unsafe.unsafeCompat { unsafe =>
+    Unsafe.unsafe { unsafe =>
       given u: Unsafe = unsafe
       println(runtime.unsafe.run(meaningOfLine))
     }

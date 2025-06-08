@@ -2,7 +2,9 @@ import Dependencies._
 import Dependencies.{ IO => io }
 
 ThisBuild / organization := "com.github"
-ThisBuild / scalaVersion := "3.2.0"
+ThisBuild / scalaVersion := "3.3.4"
+
+resolvers += "Sonatype OSS Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots"
 
 ThisBuild / scalacOptions ++=
   Seq(
@@ -25,6 +27,7 @@ lazy val app =
     .settings(name := "app")
     .settings(publish := {}, publish / skip := true)
     .settings(commonSettings)
+    .settings(testFrameworks += new TestFramework("zio.test.sbt.ZTestFramework"))
     .settings(libraryDependencies ++= testDep ++ zioDep ++ loggingDep ++ apacheDep)
 
 lazy val apacheDep =
@@ -41,7 +44,10 @@ lazy val zioDep =
     dev.zio.`zio-config-typesafe`,
     dev.zio.`zio-prelude`,
     dev.zio.`zio-test`,
-    io.d11.zhttp,
+    dev.zio.`zio-test-sbt`,
+    dev.zio.`zio-test-magnolia`,
+    dev.zio.`zio-http`,
+    dev.zio.`zio-http-test`,
   )
 
 lazy val loggingDep =

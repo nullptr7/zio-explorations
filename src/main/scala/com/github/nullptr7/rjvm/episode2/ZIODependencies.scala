@@ -48,7 +48,7 @@ object ZIODependencies /* extends ZIOAppDefault */:
 
   class ConnectionPool(nConnections: Int):
     def get: Task[Connection] =
-      ZIO.succeed(println("Acquired Connection...")) *> ZIO.succeed(Connection())
+      ZIO.succeed(println("Acquired Connection...")).as(Connection())
 
   object ConnectionPool:
     def create(nConnections: Int): ConnectionPool =

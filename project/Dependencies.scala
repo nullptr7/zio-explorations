@@ -19,22 +19,34 @@ object Dependencies {
   object dev {
     object zio {
       val zio =
-        "dev.zio" %% "zio" % "2.0.13"
+        "dev.zio" %% "zio" % "2.1.6"
 
       val `zio-test` =
-        "dev.zio" %% "zio-test" % "2.0.13" % Test
+        "dev.zio" %% "zio-test" % "2.1.4" % Test
+
+      val `zio-test-sbt` =
+        "dev.zio" %% "zio-test-sbt" % "2.1.4" % Test
+
+      val `zio-test-magnolia` =
+        "dev.zio" %% "zio-test-magnolia" % "2.1.4" % Test
 
       val `zio-json` =
-        "dev.zio" %% "zio-json" % "0.5.0"
+        "dev.zio" %% "zio-json" % "0.6.2"
 
       val `zio-config` =
-        "dev.zio" %% "zio-config" % "3.0.7"
+        "dev.zio" %% "zio-config" % "4.0.2"
 
       val `zio-config-magnolia` =
-        "dev.zio" %% "zio-config-magnolia" % "3.0.7"
+        "dev.zio" %% "zio-config-magnolia" % "4.0.1"
 
       val `zio-config-typesafe` =
-        "dev.zio" %% "zio-config-typesafe" % "3.0.7"
+        "dev.zio" %% "zio-config-typesafe" % "4.0.2"
+
+      val `zio-http` =
+        "dev.zio" %% "zio-http" % "3.0.1+97-29d12531-SNAPSHOT"
+
+      val `zio-http-test` =
+        "dev.zio" %% "zio-http-testkit" % "3.0.1" % Test
 
       val `zio-prelude` =
         "dev.zio" %% "zio-prelude" % "1.0.0-RC16"

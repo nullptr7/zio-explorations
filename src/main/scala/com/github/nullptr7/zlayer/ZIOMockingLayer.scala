@@ -5,15 +5,15 @@ import org.apache.hc.client5.http.impl.classic.{ BasicHttpClientResponseHandler,
 import org.apache.hc.core5.http.io.HttpClientResponseHandler
 import zio.*
 
-object ZIOMockingLayer /*extends ZIOAppDefault*/:
-  //private val combinedLayer = ZLayer.succeed("https://api.agify.io/?name=meelad") >>> UrlServiceLive.layer
+object ZIOMockingLayer extends ZIOAppDefault:
+  private val combinedLayer = ZLayer.succeed("https://api.agify.io/?name=meelad") >>> UrlServiceLive.layer
 
-  /*override def run: ZIO[Any with ZIOAppArgs with Scope, Any, Any] =
+  override def run: ZIO[Any with ZIOAppArgs with Scope, Any, Any] =
     ZIO
       .serviceWith[UrlService](_.callMe())
       .provideLayer(combinedLayer)
       .flatten
-      .tap(str => Console.printLine(str))*/
+      .tap(str => Console.printLine(str))
 
   trait UrlService:
     def callMe(): Task[String]

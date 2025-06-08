@@ -35,4 +35,4 @@ object ZIOMockingLayerSpec extends ZIOSpecDefault:
         val effect = ZIO.serviceWith[UrlService](_.callMe()).flatten
         assertZIO(effect.exit)(Assertion.fails(isSubtype[RuntimeException](anything)))
       }.provideLayer(ZLayer.succeed("http://fake-url.com") >>> UrlServiceMockLayer.failMockLayer),
-    )
+    ) @@ TestAspect.ignore

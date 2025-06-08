@@ -17,33 +17,30 @@ object ZIOErrorHandling extends ZIOAppDefault:
 
   // attempt: run an effect that can throw an exception
 
-  val badZIO = ZIO.succeed {
+  val badZIO = ZIO.succeed:
     println("Trying something")
     val string: String | Null = null
     string.length()
-  } // This is bad
+  // This is bad
 
   // Use attempt if you are not sure what you code might throw
-  val aBetterZIO: Task[Int] = ZIO.attempt {
+  val aBetterZIO: Task[Int] = ZIO.attempt:
     println("Trying something")
     val string: String | Null = null
     string.nn.length()
-  }
 
   // effectfully catch errors
   val catchError:  ZIO[Any, Throwable, Matchable] = aBetterZIO.catchAll(e => ZIO.attempt(s"Returning a different value because $e"))
   val catchError1: ZIO[Any, Nothing, Matchable]   = aBetterZIO.catchAll(e => ZIO.succeed(s"Returning a different value because $e"))
 
-  val catchSelectiveErrors: ZIO[Any, Throwable, Matchable] = aBetterZIO.catchSome {
+  val catchSelectiveErrors: ZIO[Any, Throwable, Matchable] = aBetterZIO.catchSome:
     case e: RuntimeException => ZIO.succeed(s"Ignoring runtime exception $e")
     case _ => ZIO.succeed("Ignoring everything else")
-  }
 
   // This takes lowest common ancestor i.e. common between String and Throwable and the common is Object or Serializable
-  val catchSelectiveErrorsV2: ZIO[Any, Object, Matchable] = aBetterZIO.catchSome {
+  val catchSelectiveErrorsV2: ZIO[Any, Object, Matchable] = aBetterZIO.catchSome:
     case e: RuntimeException => ZIO.succeed(s"Ignoring runtime exception $e")
     case _ => ZIO.fail("Ignoring everything else")
-  }
 
   // chain effects
   val aBetterAttempt: ZIO[Any, Nothing, Int] = aBetterZIO.orElse(ZIO.succeed(56)) // This ZIO effect will never fail hence Nothing
@@ -107,11 +104,10 @@ object ZIOErrorHandling extends ZIOAppDefault:
     )
 
   def customAbsolve[E, A](uio: UIO[Either[E, A]]): IO[E, A] =
-    uio.flatMap {
+    uio.flatMap:
       _ match
         case Left(value)  => ZIO.fail(value)
         case Right(value) => ZIO.succeed(value)
-    }
 
   /*
     Errors: Failure present in ZIO type signature (like "checked exception")
@@ -165,15 +161,13 @@ object ZIOErrorHandling extends ZIOAppDefault:
     ZIO.fail(new IOException("Wide IP Error"))
 
   def callHttpEndpoint_v2(url: String): IO[IOException, String] =
-    callHttpEndpointWideError(url).refineOrDie {
+    callHttpEndpointWideError(url).refineOrDie:
       case ioe: IOException => ioe
       case _:   Exception   => new IOException("Generic Exception")
-    }
 
   // Turn defects into the error channel
-  val endpointCallWithError: IO[String, String] = endpointCallWithDefects.unrefine {
+  val endpointCallWithError: IO[String, String] = endpointCallWithDefects.unrefine:
     case e: Throwable => e.getMessage()
-  }
 
   val endpointCallWithError_v2 = callHttpEndpoint("dbcas.com").unrefineWith {
     case e: Throwable => ZIO.fail(e.getMessage())
@@ -220,16 +214,14 @@ object ZIOErrorHandling extends ZIOAppDefault:
 
   val aTypedFailure_v2: ZIO[Any, Cause[Nothing], Int] = aBadFailure.sandbox // Exposes the defect in the cause
 
-  val aTypedFailure_v3: ZIO[Any, Throwable, Int] = aBadFailure.unrefine { // Surfaces out the exception to the error channel
+  val aTypedFailure_v3: ZIO[Any, Throwable, Int] = aBadFailure.unrefine: // Surfaces out the exception to the error channel
     case e => e
-  }
 
   // 2 - Take some ZIOs that can fail with throwable and just surface out a bunch of exceptions
   // transform a zio to another zio with narrower exception type
   def ioException[R, A](zio: ZIO[R, Throwable, A]): ZIO[R, IOException, A] =
-    zio.refineOrDie {
+    zio.refineOrDie:
       case io: IOException => new IOException(io.getMessage()) // This means that we are only taking IO rest will be considered as defect
-    }
 
   // 3 - Work with Either and expose the undesired value in the value side or combnie either in error channel
   def left[R, E, A, B](zio: ZIO[R, E, Either[A, B]]): ZIO[R, Either[E, A], B] =

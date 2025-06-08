@@ -91,10 +91,9 @@ object AsynchronousEffects extends ZIOAppDefault:
   // hint: invoke cb on/when the future completes
   private def future2ZIO[A](future: => Future[A])(implicit ec: ExecutionContext): Task[A] =
     ZIO.async[Any, Throwable, A] { cb =>
-      future.onComplete {
+      future.onComplete:
         case Failure(exception) => cb(ZIO.fail(exception))
         case Success(value)     => cb(ZIO.succeed(value))
-      }
     }
 
   private lazy val demoFuture2ZIO: ZIO[Any, Throwable, Unit] =

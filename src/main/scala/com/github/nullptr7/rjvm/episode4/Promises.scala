@@ -147,14 +147,13 @@ object Promises extends ZIOAppDefault:
         promise <- Promise.make[Nothing, Either[Exit[E, A], Exit[E, B]]]
         aFib    <- zioA.onExit(exitA => promise.succeed(Left(exitA))).fork
         bFib    <- zioB.onExit(exitB => promise.succeed(Right(exitB))).fork
-        result  <- restore(promise.await).onInterrupt {
+        result  <- restore(promise.await).onInterrupt:
                      for
                        interruptA <- aFib.interrupt.fork
                        interruptB <- bFib.interrupt.fork
                        _          <- interruptA.join
                        _          <- interruptB.join
                      yield ()
-                   }
       yield result match
         case Left(exitA)  => Left((exitA, bFib))
         case Right(exitB) => Right(aFib, exitB)
@@ -166,10 +165,9 @@ object Promises extends ZIOAppDefault:
 
     val pair = racePair(zioA, zioB)
 
-    pair.flatMap {
+    pair.flatMap:
       case Left((exitA, fibB))  => fibB.interrupt *> ZIO.succeed("first won").debugThread *> ZIO.succeed(exitA).debugThread
       case Right((fibA, exitB)) => fibA.interrupt *> ZIO.succeed("second won").debugThread *> ZIO.succeed(exitB).debugThread
-    }
 
   override def run: ZIO[Any & (ZIOAppArgs & Scope), Any, Any] =
     /*demoPromise()*/ /*downloadFileWithRef()*/ /*eggBoiler()*/ demoRacePair
